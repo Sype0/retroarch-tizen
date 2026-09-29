@@ -102,7 +102,7 @@ await scenario("n64", siteUrl, async (page, shot) => {
    await shot("1-game");
    await page.waitForTimeout(10000);
    await shot("2-game-later");
-   await remoteKey(page, 403); // legacy core: falls back to the F1 hotkey
+   await remoteKey(page, 403); // red key -> RetroArch menu
    await page.waitForTimeout(2000);
    await shot("3-menu");
 });

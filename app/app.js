@@ -85,13 +85,6 @@
       19: cmd("PAUSE_TOGGLE")
    };
 
-   var CMD_KEYS = {
-      MENU_TOGGLE: k("F1", "F1", 112),
-      SAVE_STATE: k("F2", "F2", 113),
-      LOAD_STATE: k("F4", "F4", 115),
-      PAUSE_TOGGLE: k("KeyP", "p", 80)
-   };
-
    function sendKey(type, m) {
       var ev = new KeyboardEvent(type, { key: m.key, code: m.code, bubbles: true, cancelable: true });
       try {
@@ -119,12 +112,10 @@
          if (!m) return;
          e.preventDefault();
          e.stopImmediatePropagation();
-         if (m.cmd && Module && Module.retroArchSend) {
-            if (e.type === "keydown" && !e.repeat) Module.retroArchSend(m.cmd);
+         if (m.cmd) {
+            if (e.type === "keydown" && !e.repeat && Module) Module.retroArchSend(m.cmd);
             return;
          }
-         /* legacy cores have no command interface: use the default hotkeys */
-         if (m.cmd) m = CMD_KEYS[m.cmd];
          if (e.type === "keydown") {
             downAt[m.code] = Date.now();
             sendKey("keydown", m);
@@ -437,8 +428,6 @@
    /* ------------------------------------------------------------------ */
 
    var Module = null;
-   /* old (legacy) Emscripten FS needs this for typed arrays, new ones ignore it */
-   var BIN = { encoding: "binary" };
    var pendingRom = null; /* { main, files: [{ name, data: Uint8Array }] } */
 
    function relaunch(core) {
@@ -451,27 +440,6 @@
       location.reload();
    }
 
-   /* Old (2019) non-modular builds, still the only N64 core on the libretro
-      web buildbot: configured through a global Module before the script
-      runs, and the whole RetroArch frontend of that era is baked in. */
-   function loadLegacyCore(wasm) {
-      return new Promise(function (resolve, reject) {
-         var mod = {
-            noInitialRun: true,
-            arguments: [],
-            canvas: canvas,
-            wasmBinary: wasm,
-            locateFile: function (path) { return ASSET_BASE + "cores/" + path; },
-            print: function (t) { console.log("stdout:", t); },
-            printErr: function (t) { console.log("stderr:", t); },
-            onRuntimeInitialized: function () { resolve(mod); },
-            onAbort: function (what) { reject(new Error("abort: " + what)); }
-         };
-         window.Module = mod;
-         loadScript(window.__RA_SCRIPT_URL).catch(reject);
-      });
-   }
-
    function startCore(core) {
       loading("RetroArch hazırlanıyor…", null);
       var factoryName = "libretro_" + core.id;
@@ -481,7 +449,6 @@
       }).then(function (wasm) {
          loading("Başlatılıyor…", 1);
          window.__RA_SCRIPT_URL = ASSET_BASE + "cores/" + core.id + "_libretro.js";
-         if (core.legacy) return loadLegacyCore(wasm);
          var p = window[factoryName] ? Promise.resolve() : loadScript(window.__RA_SCRIPT_URL);
          return p.then(function () {
             if (!window[factoryName]) throw new Error(factoryName + " bulunamadı");
@@ -501,16 +468,15 @@
       }).then(function (mod) {
          Module = mod;
          window.Module = mod;
-         /* legacy builds keep their runtime in globals */
-         var FS = mod.FS || window.FS;
-         var bfs = new BrowserFS.EmscriptenFS(FS, mod.PATH || window.PATH, mod.ERRNO_CODES || window.ERRNO_CODES);
+         var FS = mod.FS;
+         var bfs = new BrowserFS.EmscriptenFS(FS, mod.PATH, mod.ERRNO_CODES);
          mkdirp(FS, "/home");
          FS.mount(bfs, { root: "/home" }, "/home");
 
          /* RetroArch expects core files to exist; the real code is the
             already loaded wasm module. */
          RA_CORES.forEach(function (c) {
-            FS.writeFile(RA_HOME + "/cores/" + c.id + "_libretro.core", new Uint8Array(), BIN);
+            FS.writeFile(RA_HOME + "/cores/" + c.id + "_libretro.core", new Uint8Array());
          });
 
          mkdirp(FS, RA_HOME + "/userdata");
@@ -521,7 +487,7 @@
          var content = "--menu";
          if (pendingRom) {
             pendingRom.files.forEach(function (f) {
-               FS.writeFile(ROM_DIR + "/" + f.name, f.data, BIN);
+               FS.writeFile(ROM_DIR + "/" + f.name, f.data);
             });
             content = ROM_DIR + "/" + pendingRom.main;
             pendingRom = null;

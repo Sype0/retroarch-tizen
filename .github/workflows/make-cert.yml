@@ -3,12 +3,9 @@ name: Create Tizen author certificate
 # One-off: creates a Tizen author certificate as a short-lived artifact. Store
 # it as the TIZEN_AUTHOR_P12 (base64) / TIZEN_AUTHOR_PASSWORD secrets so every
 # release is signed with the same key (TVs refuse updates signed differently).
+# The password is read from the TIZEN_AUTHOR_PASSWORD secret, set it first.
 on:
   workflow_dispatch:
-    inputs:
-      password:
-        description: Certificate password
-        required: true
 
 jobs:
   cert:
@@ -17,10 +14,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: |
+      - env:
+          PASS: ${{ secrets.TIZEN_AUTHOR_PASSWORD }}
+        run: |
           npm install --no-save --prefix /tmp/tizenjs github:reisxd/tizen.js
           node /tmp/tizenjs/node_modules/tizen/cli.js create-tizen-cert \
-            --name retroarch-tizen --password "${{ inputs.password }}" --output author.p12
+            --name retroarch-tizen --password "$PASS" --output author.p12
       - uses: actions/upload-artifact@v4
         with:
           name: author-cert

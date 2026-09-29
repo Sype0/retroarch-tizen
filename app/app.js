@@ -437,6 +437,8 @@
    /* ------------------------------------------------------------------ */
 
    var Module = null;
+   /* old (legacy) Emscripten FS needs this for typed arrays, new ones ignore it */
+   var BIN = { encoding: "binary" };
    var pendingRom = null; /* { main, files: [{ name, data: Uint8Array }] } */
 
    function relaunch(core) {
@@ -508,7 +510,7 @@
          /* RetroArch expects core files to exist; the real code is the
             already loaded wasm module. */
          RA_CORES.forEach(function (c) {
-            FS.writeFile(RA_HOME + "/cores/" + c.id + "_libretro.core", new Uint8Array());
+            FS.writeFile(RA_HOME + "/cores/" + c.id + "_libretro.core", new Uint8Array(), BIN);
          });
 
          mkdirp(FS, RA_HOME + "/userdata");
@@ -519,7 +521,7 @@
          var content = "--menu";
          if (pendingRom) {
             pendingRom.files.forEach(function (f) {
-               FS.writeFile(ROM_DIR + "/" + f.name, f.data);
+               FS.writeFile(ROM_DIR + "/" + f.name, f.data, BIN);
             });
             content = ROM_DIR + "/" + pendingRom.main;
             pendingRom = null;

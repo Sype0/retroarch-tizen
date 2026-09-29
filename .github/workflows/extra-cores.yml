@@ -36,8 +36,13 @@ jobs:
           # (Passed via the environment: the Makefile appends with +=.)
           RENAMES="-Dconvert_float_to_s16=glupen_convert_float_to_s16 -Dconvert_s16_to_float=glupen_convert_s16_to_float"
           export CFLAGS="$RENAMES" CXXFLAGS="$RENAMES"
-          # STATIC_LINKING makes it an archive (named .bc) instead of a link
-          emmake make platform=emscripten STATIC_LINKING=1 -j"$(nproc)"
+          # STATIC_LINKING makes it an archive (named .bc) instead of a link.
+          # Plain "ar rcs" keys members by basename, so e.g. the many main.o /
+          # libretro.o files would overwrite each other; keep full paths.
+          printf '#!/bin/sh\nshift\nexec emar rcsP "$@"\n' > /tmp/ar-fullpath
+          chmod +x /tmp/ar-fullpath
+          emmake make platform=emscripten STATIC_LINKING=1 AR=/tmp/ar-fullpath -j"$(nproc)"
+          echo "archive members: $(emar t mupen64plus_next_libretro_emscripten.bc | wc -l)"
           ls -la *_emscripten.*
 
       - name: Build RetroArch with the core

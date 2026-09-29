@@ -24,7 +24,7 @@ async function scenario(name, url, steps) {
       await steps(page, shot);
       const errors = await page.$eval("#errors", (e) => e.textContent);
       if (errors.trim()) throw new Error("on-screen errors:\n" + errors);
-      if (!logs.some((l) => /\[INFO\] RetroArch/.test(l))) throw new Error("RetroArch did not start");
+      if (!logs.some((l) => /\[INFO\] RetroArch|RetroArch: /.test(l))) throw new Error("RetroArch did not start");
       console.log(`PASS ${name}`);
    } catch (e) {
       failed = true;
@@ -87,6 +87,25 @@ await scenario("rom", siteUrl, async (page, shot) => {
 });
 
 if (tbUrl) await scenario("remote-assets", tbUrl, bootMenu);
+
+await scenario("n64", siteUrl, async (page, shot) => {
+   await page.click('.tile:has-text("Nintendo 64")');
+   await page.waitForSelector("#screen-source.active");
+   await page.keyboard.press("Enter"); // network folder
+   await page.waitForSelector("#screen-url.active");
+   await page.fill("#url-input", romUrl);
+   await page.keyboard.press("Enter");
+   await page.waitForSelector("#screen-browser.active .item.focused");
+   await page.keyboard.press("Enter");
+   await page.waitForSelector("body.playing", { timeout: 180000 });
+   await page.waitForTimeout(10000);
+   await shot("1-game");
+   await page.waitForTimeout(10000);
+   await shot("2-game-later");
+   await remoteKey(page, 403); // legacy core: falls back to the F1 hotkey
+   await page.waitForTimeout(2000);
+   await shot("3-menu");
+});
 
 if (romFile) await scenario("phone", siteUrl, async (page, shot) => {
    await page.waitForSelector("#phone-panel svg", { timeout: 20000 });

@@ -14,6 +14,7 @@ var RA_CORES = [
    { id: "genesis_plus_gx",   name: "Sega MD / MS / GG / CD",     emu: "Genesis Plus GX",   ext: ["md", "gen", "smd", "bin", "sms", "gg", "sg", "68k", "chd", "cue", "m3u"] },
    { id: "picodrive",         name: "Sega MD / 32X / CD",         emu: "PicoDrive",         ext: ["md", "gen", "smd", "bin", "32x", "sms", "gg", "cue", "chd"] },
    { id: "gearsystem",        name: "Sega MS / GG / SG-1000",     emu: "Gearsystem",        ext: ["sms", "gg", "sg", "bin", "rom"] },
+   { id: "parallel_n64",      name: "Nintendo 64 (deneysel)",     emu: "ParaLLEl N64 · çok yavaş olabilir", ext: ["n64", "v64", "z64", "u1", "ndd"], legacy: true },
    { id: "pcsx_rearmed",      name: "PlayStation",                emu: "PCSX ReARMed",      ext: ["bin", "cue", "img", "mdf", "pbp", "chd", "iso", "m3u", "exe"] },
    { id: "mednafen_pce_fast", name: "PC Engine / TurboGrafx",     emu: "Beetle PCE Fast",   ext: ["pce", "cue", "ccd", "chd", "toc", "m3u"] },
    { id: "fbalpha2012_cps1",  name: "Arcade (CPS-1)",             emu: "FB Alpha 2012",     ext: ["zip"] },

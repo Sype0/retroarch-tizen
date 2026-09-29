@@ -9,6 +9,7 @@ vba_next
 genesis_plus_gx
 picodrive
 gearsystem
+parallel_n64
 pcsx_rearmed
 mednafen_pce_fast
 fbalpha2012_cps1

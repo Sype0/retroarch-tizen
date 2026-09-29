@@ -84,6 +84,8 @@ jobs:
           mkdir -p /tmp/roms
           # freely distributed CPU test ROM, only used for this test
           curl -fsSL -o /tmp/roms/nestest.nes https://raw.githubusercontent.com/christopherpow/nes-test-roms/master/other/nestest.nes
+          # public domain (Unlicense) N64 demo by PeterLemon, only used for this test
+          curl -fsSL -o /tmp/roms/Julia.N64 https://raw.githubusercontent.com/PeterLemon/N64/master/CP1/Fractal/32BPP/320X240/Julia/Single/Julia32BPP320X240.N64
           (cd site && python3 -m http.server 8000 >/dev/null 2>&1 &)
           (python3 tools/rom-server.py /tmp/roms 8001 >/dev/null 2>&1 &)
           (RA_PHONE_BASE=http://localhost:8000/ node tools/service-harness.js tizenbrew/service.js &)

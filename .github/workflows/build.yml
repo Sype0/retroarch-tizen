@@ -5,6 +5,10 @@ on:
     branches: [main]
     tags: ["v*"]
   workflow_dispatch:
+  # pick up newly built extra cores
+  workflow_run:
+    workflows: ["Extra cores"]
+    types: [completed]
 
 permissions:
   contents: write

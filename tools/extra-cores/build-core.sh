@@ -7,6 +7,13 @@
 # Run from a directory containing a RetroArch checkout in ./ra, with emsdk
 # active. Output: ra/<core>_libretro.{js,wasm}
 #
+# Environment:
+#   RA_MAKE_ARGS   extra arguments for RetroArch's Makefile.emscripten
+#                  (e.g. ASYNC=1, needed by cores that use libco)
+#
+# Cores that use libco get an Emscripten fiber backend patched in
+# (libco_emscripten_fiber.c); they must be linked with RA_MAKE_ARGS=ASYNC=1.
+#
 # A core carries its own copy of libretro-common, which clashes with
 # RetroArch's when both are linked into one wasm. Cores rename a few symbols
 # by hand for this; here every global the core defines that RetroArch also
@@ -36,9 +43,24 @@ defined_syms() {
    "$NM" --defined-only --extern-only --format=just-symbols "$@" 2>/dev/null | sort -u
 }
 
+RA_MAKE_ARGS=${RA_MAKE_ARGS:-}
+
+echo "== libco"
+find "$CORE_DIR" -path '*libco/libco.c' | while read -r f; do
+   if ! grep -q libco_emscripten_fiber "$f"; then
+      cp "$HERE/libco_emscripten_fiber.c" "$(dirname "$f")/"
+      { echo '#if defined(__EMSCRIPTEN__)'
+        echo '#include "libco_emscripten_fiber.c"'
+        echo '#else'
+        cat "$f"
+        echo '#endif'; } > "$f.new" && mv "$f.new" "$f"
+      echo "patched $f"
+   fi
+done
+
 echo "== RetroArch objects"
 # the link fails without a core; only the objects are wanted here
-(cd ra && emmake make -f Makefile.emscripten LIBRETRO="$CORE" -j"$JOBS" all >/dev/null 2>&1 || true)
+(cd ra && emmake make -f Makefile.emscripten LIBRETRO="$CORE" $RA_MAKE_ARGS -j"$JOBS" all >/dev/null 2>&1 || true)
 find ra/obj-emscripten -name '*.o' > /tmp/ra-objs.txt
 echo "$(wc -l < /tmp/ra-objs.txt) objects"
 xargs "$NM" --defined-only --extern-only --format=just-symbols < /tmp/ra-objs.txt 2>/dev/null | sort -u > /tmp/ra-syms.txt
@@ -65,5 +87,5 @@ echo "== link"
 cp "$ARCHIVE" ra/libretro_emscripten.bc
 # the renames are for the core only; RetroArch's Makefile appends to CFLAGS
 unset CFLAGS CXXFLAGS
-(cd ra && emmake make -f Makefile.emscripten LIBRETRO="$CORE" -j"$JOBS" all)
+(cd ra && emmake make -f Makefile.emscripten LIBRETRO="$CORE" $RA_MAKE_ARGS -j"$JOBS" all)
 ls -la ra/"$CORE"_libretro.*

@@ -33,6 +33,11 @@ jobs:
           source "$HOME/emsdk/emsdk_env.sh"
           git clone --depth 1 https://github.com/libretro/mupen64plus-libretro-nx.git core
           git clone --depth 1 https://github.com/libretro/RetroArch.git ra
+          # The emulator thread entry is void*(void*) but handed to co_create
+          # cast to void(void); wasm traps on such calls. Give it a wrapper.
+          sed -i -e 's/^cothread_t retro_thread;$/&\nstatic void* EmuThreadFunction(void* param);\nstatic void EmuThreadFunctionCo(void) { EmuThreadFunction(NULL); }/' \
+                 -e 's/(void (\*)(void))EmuThreadFunction/EmuThreadFunctionCo/' core/libretro/libretro.c
+          grep -n "EmuThreadFunctionCo" core/libretro/libretro.c
           # mupen64plus runs the emulator in a libco cothread -> Asyncify
           RA_MAKE_ARGS="ASYNC=1" tools/extra-cores/build-core.sh core mupen64plus_next
 

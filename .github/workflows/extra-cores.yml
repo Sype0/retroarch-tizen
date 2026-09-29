@@ -31,6 +31,11 @@ jobs:
           source "$HOME/emsdk/emsdk_env.sh"
           git clone --depth 1 https://github.com/libretro/mupen64plus-libretro-nx.git core
           cd core
+          # The core's Makefile renames its copy of libretro-common to avoid
+          # clashing with RetroArch's, but misses these newer symbols.
+          # (Passed via the environment: the Makefile appends with +=.)
+          RENAMES="-Dconvert_float_to_s16=glupen_convert_float_to_s16 -Dconvert_s16_to_float=glupen_convert_s16_to_float"
+          export CFLAGS="$RENAMES" CXXFLAGS="$RENAMES"
           # STATIC_LINKING makes it an archive (named .bc) instead of a link
           emmake make platform=emscripten STATIC_LINKING=1 -j"$(nproc)"
           ls -la *_emscripten.*

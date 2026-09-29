@@ -29,6 +29,20 @@ header {
 }
 
 header .logo { height: 96px; }
+
+#phone-panel {
+   display: none;
+   margin-left: auto;
+   align-items: center;
+   gap: 24px;
+   text-align: right;
+   font-size: 22px;
+}
+
+#phone-panel .phone-title { font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+#phone-panel .path { margin: 8px 0 0; font-size: 20px; }
+#qr { width: 150px; height: 150px; background: #fff; border-radius: 10px; overflow: hidden; }
+#qr svg { width: 100%; height: 100%; display: block; }
 h1 { margin: 0; font-size: 56px; }
 h2 { margin: 0 0 24px; font-size: 36px; font-weight: 500; }
 .muted { color: #9aa1b2; }

@@ -428,7 +428,7 @@
    /* ------------------------------------------------------------------ */
 
    var Module = null;
-   var pendingRom = null; /* { name, data: Uint8Array } */
+   var pendingRom = null; /* { main, files: [{ name, data: Uint8Array }] } */
 
    function relaunch(core) {
       /* Loading another wasm module in the same page leaks the old one; a
@@ -486,8 +486,10 @@
 
          var content = "--menu";
          if (pendingRom) {
-            content = ROM_DIR + "/" + pendingRom.name;
-            FS.writeFile(content, pendingRom.data);
+            pendingRom.files.forEach(function (f) {
+               FS.writeFile(ROM_DIR + "/" + f.name, f.data);
+            });
+            content = ROM_DIR + "/" + pendingRom.main;
             pendingRom = null;
          }
 
@@ -581,7 +583,7 @@
    }
 
    function playRom(name, data) {
-      pendingRom = { name: name, data: data };
+      pendingRom = { main: name, files: [{ name: name, data: data }] };
       startCore(selectedCore);
    }
 
@@ -692,6 +694,73 @@
       });
    }
 
+   /* ---- Phone link (TizenBrew service in tizenbrew/service.js) ---- */
+
+   var SERVICE = "http://127.0.0.1:8085/";
+
+   function getJSON(url) {
+      return downloadText(url).then(function (t) { return JSON.parse(t); });
+   }
+
+   function showQr(url) {
+      var qr = qrcode(0, "M");
+      qr.addData(url);
+      qr.make();
+      $("qr").innerHTML = qr.createSvgTag({ cellSize: 5, margin: 3, scalable: true });
+      $("phone-url").textContent = url;
+      $("phone-panel").style.display = "flex";
+   }
+
+   function receiveFromPhone(p) {
+      var done = function () { return downloadText(SERVICE + "api/done/" + p.id); };
+      var core = RA_CORES.filter(function (c) { return c.id === p.core; })[0];
+      if (!core) { fail("Bilinmeyen sistem: " + p.core); return done().catch(function () {}); }
+      selectedCore = core;
+      var files = [];
+      return p.files.reduce(function (chain, f, i) {
+         return chain.then(function () {
+            return download(SERVICE + "api/rom/" + p.id + "/" + i, "Telefondan alınıyor: " + f.name).then(function (buf) {
+               files.push({ name: f.name, data: new Uint8Array(buf) });
+            });
+         });
+      }, Promise.resolve()).then(done).then(function () {
+         pendingRom = { main: p.main, files: files };
+         startCore(core);
+      }).catch(function (e) {
+         fail("Telefondan alınamadı", e);
+         return done().catch(function () {}); /* don't retry the same upload forever */
+      });
+   }
+
+   /* The service only exists when running as a TizenBrew module; elsewhere
+      the first request fails and the QR panel just stays hidden. */
+   function pollPhone(delay) {
+      setTimeout(function () {
+         getJSON(SERVICE + "api/pending").then(function (p) {
+            if (!p || loadingActive) { pollPhone(1000); return; }
+            if (playing) {
+               /* A new game while one is running: restart the page, the
+                  pending game is picked up again after the reload. */
+               location.reload();
+               return;
+            }
+            receiveFromPhone(p).then(function () { pollPhone(1000); });
+         }, function () { pollPhone(5000); });
+      }, delay);
+   }
+
+   function initPhoneLink() {
+      if (location.protocol === "https:") return; /* mixed content */
+      getJSON(SERVICE + "api/info").then(function (info) {
+         showQr(info.url);
+         pollPhone(0);
+      }, function () {
+         /* TizenBrew starts the service asynchronously; retry a few times */
+         initPhoneLink.tries = (initPhoneLink.tries || 0) + 1;
+         if (initPhoneLink.tries < 6) setTimeout(initPhoneLink, 2000);
+      });
+   }
+
    /* ------------------------------------------------------------------ */
    /* Boot                                                                 */
    /* ------------------------------------------------------------------ */
@@ -700,6 +769,7 @@
       " · " + ((/Chrome\/(\d+)/.exec(navigator.userAgent) || [])[1] ? "Chromium " + /Chrome\/(\d+)/.exec(navigator.userAgent)[1] : navigator.userAgent);
 
    buildHome();
+   initPhoneLink();
    showScreen("screen-home", false);
 
    /* A core switch from RetroArch's own menu reloads the page into it. */

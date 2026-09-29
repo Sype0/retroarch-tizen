@@ -33,6 +33,14 @@
             <h1>RetroArch</h1>
             <div id="subtitle" class="muted">Samsung Tizen TV</div>
          </div>
+         <div id="phone-panel">
+            <div>
+               <div class="phone-title">📱 Telefondan oyun gönder</div>
+               <div class="muted">QR'ı telefonunla okut, ROM'u seç.<br>Aynı Wi-Fi ağında olmalısın.</div>
+               <div class="muted path" id="phone-url"></div>
+            </div>
+            <div id="qr"></div>
+         </div>
       </header>
 
       <section id="screen-home" class="screen">
@@ -95,6 +103,7 @@
 
    <script src="browserfs.min.js"></script>
    <script src="cores.js"></script>
+   <script src="qrcode.js"></script>
    <script src="app.js"></script>
 </body>
 </html>

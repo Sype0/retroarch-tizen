@@ -78,6 +78,7 @@ jobs:
       - name: Smoke test (headless Chromium)
         run: |
           node --check app/app.js
+          node --check tizenbrew/service.js
           npm install --no-save --prefix /tmp/pw playwright@1
           /tmp/pw/node_modules/.bin/playwright install --with-deps chromium
           mkdir -p /tmp/roms
@@ -85,10 +86,11 @@ jobs:
           curl -fsSL -o /tmp/roms/nestest.nes https://raw.githubusercontent.com/christopherpow/nes-test-roms/master/other/nestest.nes
           (cd site && python3 -m http.server 8000 >/dev/null 2>&1 &)
           (python3 tools/rom-server.py /tmp/roms 8001 >/dev/null 2>&1 &)
+          (RA_PHONE_BASE=http://localhost:8000/ node tools/service-harness.js tizenbrew/service.js &)
           sleep 1
           cp tools/smoke-test.mjs /tmp/pw/smoke-test.mjs
           # the third URL mimics TizenBrew (127.0.0.1 -> assets from GitHub Pages)
-          node /tmp/pw/smoke-test.mjs http://localhost:8000/ http://localhost:8001/ http://127.0.0.1:8000/
+          node /tmp/pw/smoke-test.mjs http://localhost:8000/ http://localhost:8001/ http://127.0.0.1:8000/ /tmp/roms/nestest.nes
 
       - uses: actions/upload-artifact@v4
         if: always()

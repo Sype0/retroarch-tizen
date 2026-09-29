@@ -8,7 +8,7 @@
 //     cores and the bundle come cross-origin from GitHub Pages
 import { chromium } from "playwright";
 
-const [siteUrl, romUrl, tbUrl] = process.argv.slice(2);
+const [siteUrl, romUrl, tbUrl, romFile] = process.argv.slice(2);
 const browser = await chromium.launch();
 let failed = false;
 
@@ -87,6 +87,24 @@ await scenario("rom", siteUrl, async (page, shot) => {
 });
 
 if (tbUrl) await scenario("remote-assets", tbUrl, bootMenu);
+
+if (romFile) await scenario("phone", siteUrl, async (page, shot) => {
+   await page.waitForSelector("#phone-panel svg", { timeout: 20000 });
+   const phoneUrl = await page.$eval("#phone-url", (e) => e.textContent);
+   await shot("1-qr");
+   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+   // the QR points at the TV's LAN address; in CI that is this runner
+   await phone.goto(phoneUrl);
+   await phone.setInputFiles("#file", romFile);
+   await phone.screenshot({ path: "shot-phone-2-phone.png" });
+   await phone.click("#send");
+   await phone.waitForSelector("#status.ok", { timeout: 30000 });
+   await phone.screenshot({ path: "shot-phone-3-phone-sent.png" });
+   await page.waitForSelector("body.playing", { timeout: 180000 });
+   await page.waitForTimeout(6000);
+   await shot("4-game");
+   await phone.close();
+});
 
 await browser.close();
 process.exit(failed ? 1 : 0);

@@ -5,6 +5,7 @@ Samsung Tizen Smart TV'ler için RetroArch. [libretro web player](https://web.li
 
 - Kumanda ile gezilen başlatıcı (sistem seç → ROM seç → oyna)
 - Kumanda tuşlarının RetroArch tuşlarına çevrilmesi, USB/Bluetooth oyun kolu desteği
+- **Telefondan QR ile oyun gönderme** (TizenBrew): TV'deki QR'ı okut, ROM'u seç, oyun TV'de açılır
 - ROM'ları **USB bellekten** (yalnızca .wgt) veya **ağ klasöründen** (HTTP) yükleme
 - Hafif RGUI menüsü ve TV için ayarlanmış varsayılanlar
 - Kayıtlar/ayarlar TV'de kalıcı (IndexedDB)
@@ -29,6 +30,13 @@ Uygulama kabuğu TV'de çalışır; emülatör çekirdekleri (wasm) ilk açılı
 <https://sype0.github.io/retroarch-tizen/> adresinden indirilir, bu yüzden internet gerekir.
 
 ## ROM yükleme
+
+**Telefondan (QR, en kolayı):** TizenBrew modülü olarak açınca ana ekranın sağ üstünde bir QR kod çıkar.
+Telefonla okut → açılan sayfada ROM'u seç (CD oyunlarında .cue + .bin birlikte) → *TV'de oyna*.
+Sistem dosya uzantısından otomatik seçilir. Oyun oynarken yeni oyun gönderirsen TV ona geçer.
+ROM internete çıkmaz, telefon ile TV arasında yerel ağda gider (TV'de çalışan küçük servis:
+[`tizenbrew/service.js`](tizenbrew/service.js), port 8085). Telefon ve TV aynı Wi-Fi'da olmalı.
+.wgt sürümünde TV sunucu açamadığı için bu özellik yok.
 
 **Ağ klasörü:** ROM'ların olduğu bilgisayarda veya telefonda (Termux dahil):
 

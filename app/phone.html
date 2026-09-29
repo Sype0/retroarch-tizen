@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="tr">
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <title>RetroArch — TV'ye oyun gönder</title>
+   <style>
+      :root { color-scheme: dark; }
+      body {
+         margin: 0;
+         padding: 24px 16px 48px;
+         background: #101218;
+         color: #e8eaf0;
+         font: 17px/1.45 system-ui, -apple-system, Roboto, Arial, sans-serif;
+      }
+      main { max-width: 520px; margin: 0 auto; }
+      h1 { font-size: 26px; margin: 0 0 4px; }
+      p.muted, .muted { color: #9aa1b2; }
+      label { display: block; font-weight: 600; margin: 24px 0 8px; }
+      .pick {
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         min-height: 96px;
+         border: 2px dashed #3a4256;
+         border-radius: 14px;
+         background: #1d212c;
+         text-align: center;
+         padding: 16px;
+         word-break: break-all;
+         cursor: pointer;
+      }
+      .pick.has-file { border-style: solid; border-color: #ffb000; }
+      input[type=file] { display: none; }
+      select, button {
+         width: 100%;
+         font: inherit;
+         border-radius: 12px;
+         padding: 14px;
+         border: 0;
+      }
+      select { background: #1d212c; color: inherit; border: 1px solid #3a4256; }
+      button {
+         margin-top: 28px;
+         background: #ffb000;
+         color: #1a1300;
+         font-weight: 700;
+         font-size: 19px;
+      }
+      button:disabled { background: #3a4256; color: #9aa1b2; }
+      .bar { height: 8px; background: #2a3040; border-radius: 4px; overflow: hidden; margin-top: 20px; display: none; }
+      .bar div { height: 100%; width: 0; background: #ffb000; transition: width .2s; }
+      #status { margin-top: 16px; min-height: 1.5em; }
+      #status.ok { color: #7ee2a0; }
+      #status.err { color: #ff8a80; }
+   </style>
+</head>
+<body>
+   <main>
+      <h1>🎮 TV'ye oyun gönder</h1>
+      <p class="muted">ROM'u seç, TV'de RetroArch otomatik başlar. Telefon ve TV aynı Wi-Fi ağında olmalı.</p>
+
+      <label for="file">Oyun dosyası</label>
+      <p class="muted" style="margin-top:-4px">CD oyunlarında .cue ve .bin dosyalarını birlikte seç.</p>
+      <div class="pick" id="pick">Dosya seçmek için dokun</div>
+      <input type="file" id="file" multiple>
+
+      <label for="core">Sistem</label>
+      <select id="core"></select>
+
+      <button id="send" disabled>TV'de oyna</button>
+      <div class="bar" id="bar"><div id="bar-fill"></div></div>
+      <div id="status"></div>
+   </main>
+
+   <script src="cores.js"></script>
+   <script>
+      var fileInput = document.getElementById("file");
+      var pick = document.getElementById("pick");
+      var coreSel = document.getElementById("core");
+      var sendBtn = document.getElementById("send");
+      var statusEl = document.getElementById("status");
+      var files = [];
+
+      RA_CORES.forEach(function (c) {
+         var o = document.createElement("option");
+         o.value = c.id;
+         o.textContent = c.name + " — " + c.emu;
+         coreSel.appendChild(o);
+      });
+      try { if (localStorage.lastCore) coreSel.value = localStorage.lastCore; } catch (e) {}
+
+      function status(text, cls) {
+         statusEl.textContent = text;
+         statusEl.className = cls || "";
+      }
+
+      /* Disc images are far more likely PlayStation than Sega CD. */
+      var PREFERRED = { cue: "pcsx_rearmed", chd: "pcsx_rearmed", iso: "pcsx_rearmed", pbp: "pcsx_rearmed", m3u: "pcsx_rearmed" };
+
+      /* First core that lists the extension; zip/7z/bin are ambiguous (arcade
+         set, zipped ROM, any cartridge dump) so keep the current choice. */
+      function guessCore(name) {
+         var ext = name.split(".").pop().toLowerCase();
+         if (ext === "zip" || ext === "7z" || ext === "bin") return null;
+         if (PREFERRED[ext]) return PREFERRED[ext];
+         for (var i = 0; i < RA_CORES.length; i++)
+            if (RA_CORES[i].ext.indexOf(ext) >= 0) return RA_CORES[i].id;
+         return null;
+      }
+
+      /* The file RetroArch should open when a game is several files. */
+      var MAIN_EXT = ["m3u", "cue", "ccd", "toc", "gdi"];
+      function mainFile(list) {
+         for (var i = 0; i < MAIN_EXT.length; i++)
+            for (var j = 0; j < list.length; j++)
+               if (list[j].name.split(".").pop().toLowerCase() === MAIN_EXT[i]) return list[j];
+         return list[0];
+      }
+
+      pick.onclick = function () { fileInput.click(); };
+      fileInput.onchange = function () {
+         files = [].slice.call(fileInput.files);
+         var total = files.reduce(function (n, f) { return n + f.size; }, 0);
+         pick.textContent = !files.length ? "Dosya seçmek için dokun"
+            : files.map(function (f) { return f.name; }).join(", ") + " (" + (total / 1048576).toFixed(1) + " MB)";
+         pick.classList.toggle("has-file", files.length > 0);
+         sendBtn.disabled = !files.length;
+         if (files.length) {
+            var g = guessCore(mainFile(files).name);
+            if (g) coreSel.value = g;
+         }
+         status("");
+      };
+
+      function upload(file, query, onProgress) {
+         return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "api/upload?" + query);
+            xhr.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded); };
+            xhr.onload = function () {
+               if (xhr.status === 200) { resolve(); return; }
+               var msg = "HTTP " + xhr.status;
+               try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
+               reject(new Error(msg));
+            };
+            xhr.onerror = function () { reject(new Error("TV'ye ulaşılamadı. Aynı Wi-Fi'da mısın?")); };
+            xhr.send(file);
+         });
+      }
+
+      sendBtn.onclick = function () {
+         if (!files.length) return;
+         try { localStorage.lastCore = coreSel.value; } catch (e) {}
+         sendBtn.disabled = true;
+         var bar = document.getElementById("bar"), fill = document.getElementById("bar-fill");
+         bar.style.display = "block";
+         fill.style.width = "0";
+         status("Gönderiliyor…");
+
+         var batch = Date.now() + "-" + Math.random().toString(36).slice(2);
+         var main = mainFile(files);
+         /* main file last, so the TV only starts once everything arrived */
+         var order = files.filter(function (f) { return f !== main; }).concat([main]);
+         var total = files.reduce(function (n, f) { return n + f.size; }, 0) || 1;
+         var done = 0;
+
+         order.reduce(function (p, f, i) {
+            return p.then(function () {
+               var q = "batch=" + batch + "&name=" + encodeURIComponent(f.name) +
+                  "&core=" + encodeURIComponent(coreSel.value) + "&main=" + encodeURIComponent(main.name) +
+                  (i === order.length - 1 ? "&last=1" : "");
+               return upload(f, q, function (loaded) {
+                  fill.style.width = ((done + loaded) / total * 100) + "%";
+               }).then(function () { done += f.size; });
+            });
+         }, Promise.resolve()).then(function () {
+            fill.style.width = "100%";
+            status("Gönderildi! Oyun TV'de açılıyor.", "ok");
+         }).catch(function (e) {
+            status("Hata: " + e.message, "err");
+         }).then(function () {
+            sendBtn.disabled = false;
+         });
+      };
+   </script>
+</body>
+</html>

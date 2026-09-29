@@ -1,0 +1,58 @@
+name: Extra cores
+
+# Cores the libretro web buildbot doesn't ship (currently Nintendo 64),
+# built from source against RetroArch master. The result is attached to the
+# "extra-cores" prerelease, which the main build picks up.
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/extra-cores.yml"]
+
+permissions:
+  contents: write
+
+env:
+  EMSDK_VERSION: 3.1.46
+
+jobs:
+  mupen64plus_next:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Install emsdk
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          cd "$HOME/emsdk"
+          ./emsdk install "$EMSDK_VERSION"
+          ./emsdk activate "$EMSDK_VERSION"
+
+      - name: Build core
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          git clone --depth 1 https://github.com/libretro/mupen64plus-libretro-nx.git core
+          cd core
+          # STATIC_LINKING makes it an archive (named .bc) instead of a link
+          emmake make platform=emscripten STATIC_LINKING=1 -j"$(nproc)"
+          ls -la *_emscripten.*
+
+      - name: Build RetroArch with the core
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          git clone --depth 1 https://github.com/libretro/RetroArch.git ra
+          cp core/mupen64plus_next_libretro_emscripten.bc ra/libretro_emscripten.bc
+          cd ra
+          emmake make -f Makefile.emscripten LIBRETRO=mupen64plus_next -j"$(nproc)" all
+          ls -la mupen64plus_next_libretro.*
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd ra
+          if ! gh release view extra-cores -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create extra-cores -R "$GITHUB_REPOSITORY" --prerelease --target "$GITHUB_SHA" \
+              --title "Extra cores (built from source)" \
+              --notes "Cores that the libretro web buildbot does not provide, built by .github/workflows/extra-cores.yml. Not an app release."
+          fi
+          gh release upload extra-cores -R "$GITHUB_REPOSITORY" --clobber \
+            mupen64plus_next_libretro.js mupen64plus_next_libretro.wasm

@@ -71,6 +71,12 @@ NES, SNES, Game Boy / Color / Advance, Sega Master System / Game Gear / Mega Dri
 PlayStation, PC Engine, Arcade (FBA 2012 CPS-1/2/Neo Geo, MAME 2003-Plus, FinalBurn Neo),
 Atari 2600 / Lynx, Neo Geo Pocket, WonderSwan, Virtual Boy, Doom. Liste: [`tools/cores.txt`](tools/cores.txt).
 
+**Nintendo 64 (deneysel):** libretro web için N64 derlemiyor; Mupen64Plus-Next'i bu repoda kaynaktan
+derliyoruz ([`extra-cores.yml`](.github/workflows/extra-cores.yml)). WebAssembly'de dynarec olmadığı
+için emülatör yorumlayıcı modda çalışır; TV işlemcisinde çoğu 3D oyun (Ocarina of Time dahil) tam
+hızın altında kalır. Hızı görmek için RetroArch menüsü → *Settings → On-Screen Display → Notification
+→ Display Framerate*.
+
 ## Uyumluluk
 
 Libretro'nun web derlemesi Chromium 85+ gerektirir: **Tizen 6.5 ve üzeri (2022 ve sonrası modeller)**.
@@ -85,8 +91,15 @@ yüklendiği için çok büyük CD imajları (yüzlerce MB) sorun çıkarabilir.
 1. `tools/cores.txt` içindeki çekirdekleri web.libretro.com'dan indirir, ES modüllerini klasik
    script'e çevirir (wgt içinde `file://` altında da yüklenebilsin diye).
 2. RetroArch'ın 133 MB'lık asset paketini gerekli kısımlarına (core info, autoconfig, RGUI, shader) indirger.
-3. `app/` + çekirdekler + paketi GitHub Pages'e yayınlar.
-4. [tizen.js](https://github.com/reisxd/tizen.js) ile imzalı `RetroArch.wgt` üretir; `v*` etiketinde Release oluşturur.
+3. `extra-cores` ön sürümündeki kaynaktan derlenmiş çekirdekleri (N64) ekler.
+4. `app/` + çekirdekler + paketi GitHub Pages'e yayınlar.
+5. [tizen.js](https://github.com/reisxd/tizen.js) ile imzalı `RetroArch.wgt` üretir; `v*` etiketinde Release oluşturur.
+
+`extra-cores.yml`, libretro buildbot'un web için derlemediği çekirdekleri RetroArch master ile birlikte
+Emscripten'le derler ([`tools/extra-cores/build-core.sh`](tools/extra-cores/build-core.sh)): çekirdeğin
+libretro-common kopyasındaki RetroArch ile çakışan semboller otomatik yeniden adlandırılır, libco için
+Emscripten fiber arka ucu eklenir ([`libco_emscripten_fiber.c`](tools/extra-cores/libco_emscripten_fiber.c),
+Asyncify ile bağlanır).
 
 İmzalama için repo secret'ları: `TIZEN_AUTHOR_P12` (base64 PKCS#12) ve `TIZEN_AUTHOR_PASSWORD`.
 

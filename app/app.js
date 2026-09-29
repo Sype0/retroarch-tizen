@@ -397,6 +397,7 @@
       'menu_show_core_updater = "false"',
       'menu_show_online_updater = "false"',
       'config_save_on_exit = "true"',
+      'core_info_cache_enable = "false"',
       'savestate_thumbnail_enable = "false"',
       ""
    ].join("\n");

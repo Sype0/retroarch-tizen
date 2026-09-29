@@ -38,10 +38,14 @@ jobs:
           # (Passed via the environment: the Makefile appends with +=.)
           RENAMES="-Dconvert_float_to_s16=glupen_convert_float_to_s16 -Dconvert_s16_to_float=glupen_convert_s16_to_float"
           export CFLAGS="$RENAMES" CXXFLAGS="$RENAMES"
-          # STATIC_LINKING takes the "$(AR) rcs" path; our AR turns it into a
-          # single relocatable object (see the script for why).
-          emmake make platform=emscripten STATIC_LINKING=1 \
-            AR="$GITHUB_WORKSPACE/tools/extra-cores/ar-as-relocatable.sh" -j"$(nproc)"
+          # STATIC_LINKING archives the objects with "$(AR) rcs"; see the
+          # script for why it is replaced.
+          # The Makefile builds with -fcommon, which leaves globals such as
+          # g_dev as common symbols, and archive lookup never pulls a member
+          # in for a common symbol. DYNAFLAGS (unused without a dynarec) comes
+          # after -fcommon on the command line, so -fno-common wins.
+          emmake make platform=emscripten STATIC_LINKING=1 DYNAFLAGS=-fno-common \
+            AR="$GITHUB_WORKSPACE/tools/extra-cores/ar-full-paths.sh" -j"$(nproc)"
           ls -la *_emscripten.*
 
       - name: Build RetroArch with the core

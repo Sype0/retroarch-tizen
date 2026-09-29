@@ -28,39 +28,12 @@ jobs:
           ./emsdk install "$EMSDK_VERSION"
           ./emsdk activate "$EMSDK_VERSION"
 
-      - name: Build core
+      - name: Build
         run: |
           source "$HOME/emsdk/emsdk_env.sh"
           git clone --depth 1 https://github.com/libretro/mupen64plus-libretro-nx.git core
-          cd core
-          # The core's Makefile renames its copy of libretro-common to avoid
-          # clashing with RetroArch's, but misses these newer symbols.
-          # (Passed via the environment: the Makefile appends with +=.)
-          RENAMES="-Dconvert_float_to_s16=glupen_convert_float_to_s16 -Dconvert_s16_to_float=glupen_convert_s16_to_float"
-          export CFLAGS="$RENAMES" CXXFLAGS="$RENAMES"
-          # STATIC_LINKING archives the objects with "$(AR) rcs"; see the
-          # script for why it is replaced.
-          # The Makefile builds with -fcommon, which leaves globals such as
-          # g_dev as common symbols, and archive lookup never pulls a member
-          # in for a common symbol. DYNAFLAGS (unused without a dynarec) comes
-          # after -fcommon on the command line, so -fno-common wins.
-          emmake make platform=emscripten STATIC_LINKING=1 DYNAFLAGS=-fno-common \
-            AR="$GITHUB_WORKSPACE/tools/extra-cores/ar-full-paths.sh" -j"$(nproc)"
-          ls -la *_emscripten.*
-
-      - name: Build RetroArch with the core
-        run: |
-          source "$HOME/emsdk/emsdk_env.sh"
           git clone --depth 1 https://github.com/libretro/RetroArch.git ra
-          cp core/mupen64plus_next_libretro_emscripten.bc ra/libretro_emscripten.bc
-          cd ra
-          # With -fno-common, globals that both RetroArch and the core's copy
-          # of libretro-common define (e.g. the __rglgen_* GL pointers, which
-          # -fcommon used to merge) collide; keep the first (RetroArch's).
-          # EMCC_CFLAGS because Makefile.emscripten sets LDFLAGS with :=.
-          EMCC_CFLAGS="-Wl,--allow-multiple-definition" \
-            emmake make -f Makefile.emscripten LIBRETRO=mupen64plus_next -j"$(nproc)" all
-          ls -la mupen64plus_next_libretro.*
+          tools/extra-cores/build-core.sh core mupen64plus_next
 
       - name: Publish
         env:

@@ -48,6 +48,12 @@ jobs:
             sed -e 's/import\.meta\.url/window.__RA_SCRIPT_URL/g' \
                 -e 's/^export default \(libretro_[A-Za-z0-9_]*\);$/window.\1=\1;/' \
                 "/tmp/${core}.js" > "site/cores/${core}_libretro.js"
+            if [ "$core" = parallel_n64 ]; then
+              # The 2019 build was linked without gl_glsl_backend: the JS
+              # passes a stub function where the wasm imports a data
+              # address. Give it a null address so the module can link.
+              sed -i 's/"_gl_glsl_backend":_gl_glsl_backend/"_gl_glsl_backend":0/' "site/cores/${core}_libretro.js"
+            fi
             if grep -qE '^export |import\.meta' "site/cores/${core}_libretro.js"; then
               echo "::error::could not convert $core to a classic script"; exit 1
             fi

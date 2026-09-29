@@ -41,7 +41,7 @@ xargs "$NM" --defined-only --extern-only --format=just-symbols < /tmp/ra-objs.tx
 echo "== core (first pass)"
 export CFLAGS="" CXXFLAGS=""
 build_core "$@"
-ARCHIVE=$(ls "$CORE_DIR"/*_emscripten.bc)
+ARCHIVE=$(readlink -f "$(ls "$CORE_DIR"/*_emscripten.bc)")
 mkdir -p /tmp/core-x && (cd /tmp/core-x && rm -f ./*.o && emar x "$ARCHIVE")
 defined_syms /tmp/core-x/*.o > /tmp/core-syms.txt
 

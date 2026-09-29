@@ -58,9 +58,11 @@
    };
 
    function k(code, key, keyCode) { return { code: code, key: key, keyCode: keyCode }; }
+   function cmd(name) { return { cmd: name }; }
 
    /* Remote key -> keyboard key understood by RetroArch's default binds
-      (x = A, z = B, s = X, a = Y, q/w = L/R, Enter = Start, RShift = Select). */
+      (x = A, z = B, s = X, a = Y, q/w = L/R, Enter = Start, RShift = Select),
+      or a RetroArch command for the hotkey-like functions. */
    var REMOTE_MAP = {
       37: k("ArrowLeft", "ArrowLeft", 37),
       38: k("ArrowUp", "ArrowUp", 38),
@@ -68,19 +70,19 @@
       40: k("ArrowDown", "ArrowDown", 40),
       13: k("KeyX", "x", 88),
       10009: k("KeyZ", "z", 90),
-      403: k("F1", "F1", 112),
-      48: k("F1", "F1", 112),
       404: k("Enter", "Enter", 13),
       405: k("ShiftRight", "Shift", 16),
       406: k("KeyS", "s", 83),
       50: k("KeyA", "a", 65),
       49: k("KeyQ", "q", 81),
       51: k("KeyW", "w", 87),
-      427: k("F2", "F2", 113),
-      428: k("F4", "F4", 115),
-      10252: k("KeyP", "p", 80),
-      415: k("KeyP", "p", 80),
-      19: k("KeyP", "p", 80)
+      403: cmd("MENU_TOGGLE"),
+      48: cmd("MENU_TOGGLE"),
+      427: cmd("SAVE_STATE"),
+      428: cmd("LOAD_STATE"),
+      10252: cmd("PAUSE_TOGGLE"),
+      415: cmd("PAUSE_TOGGLE"),
+      19: cmd("PAUSE_TOGGLE")
    };
 
    function sendKey(type, m) {
@@ -92,6 +94,11 @@
       ev.__ra = true;
       canvas.dispatchEvent(ev);
    }
+
+   /* RetroArch samples key state once per frame, so a release arriving in
+      the same frame as the press would be lost. Hold keys for a minimum time. */
+   var MIN_HOLD_MS = 60;
+   var downAt = {};
 
    var playing = false;
 
@@ -105,7 +112,17 @@
          if (!m) return;
          e.preventDefault();
          e.stopImmediatePropagation();
-         sendKey(e.type, m);
+         if (m.cmd) {
+            if (e.type === "keydown" && !e.repeat && Module) Module.retroArchSend(m.cmd);
+            return;
+         }
+         if (e.type === "keydown") {
+            downAt[m.code] = Date.now();
+            sendKey("keydown", m);
+         } else {
+            var held = Date.now() - (downAt[m.code] || 0);
+            setTimeout(function () { sendKey("keyup", m); }, Math.max(0, MIN_HOLD_MS - held));
+         }
          return;
       }
       if (e.type !== "keydown") return;
@@ -388,11 +405,7 @@
       'video_smooth = "false"',
       'video_font_size = "24.000000"',
       'audio_latency = "128"',
-      'input_menu_toggle = "f1"',
       'input_exit_emulator = "nul"',
-      'input_save_state = "f2"',
-      'input_load_state = "f4"',
-      'input_pause_toggle = "p"',
       'input_autodetect_enable = "true"',
       'menu_show_core_updater = "false"',
       'menu_show_online_updater = "false"',

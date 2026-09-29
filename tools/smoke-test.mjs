@@ -35,6 +35,18 @@ async function scenario(name, url, steps) {
    await page.close();
 }
 
+// Simulates a TV remote key (TV keys have keyCodes but no event.code).
+async function remoteKey(page, keyCode) {
+   const fire = (type) => page.evaluate(([type, keyCode]) => {
+      const e = new KeyboardEvent(type, { bubbles: true });
+      Object.defineProperty(e, "keyCode", { get: () => keyCode });
+      window.dispatchEvent(e);
+   }, [type, keyCode]);
+   await fire("keydown");
+   await page.waitForTimeout(150);
+   await fire("keyup");
+}
+
 async function bootMenu(page, shot) {
    await shot("1-home");
    await page.keyboard.press("Enter"); // first system (FCEUmm)
@@ -67,15 +79,11 @@ await scenario("rom", siteUrl, async (page, shot) => {
    await page.waitForTimeout(6000);
    await shot("2-game");
    // Red key on the remote opens the RetroArch menu
-   await page.evaluate(() => {
-      for (const type of ["keydown", "keyup"]) {
-         const e = new KeyboardEvent(type, { bubbles: true });
-         Object.defineProperty(e, "keyCode", { get: () => 403 });
-         window.dispatchEvent(e);
-      }
-   });
+   const before = await page.screenshot();
+   await remoteKey(page, 403);
    await page.waitForTimeout(1500);
-   await shot("3-quickmenu");
+   const after = await page.screenshot({ path: "shot-rom-3-quickmenu.png" });
+   if (before.equals(after)) throw new Error("red key did not change the screen (menu not opened)");
 });
 
 if (tbUrl) await scenario("remote-assets", tbUrl, bootMenu);

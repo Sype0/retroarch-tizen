@@ -771,8 +771,16 @@
    /* Boot                                                                 */
    /* ------------------------------------------------------------------ */
 
-   $("subtitle").textContent = "Samsung Tizen TV · " + (hasTizen ? "Tizen" : "tarayıcı") +
-      " · " + ((/Chrome\/(\d+)/.exec(navigator.userAgent) || [])[1] ? "Chromium " + /Chrome\/(\d+)/.exec(navigator.userAgent)[1] : navigator.userAgent);
+   /* Desktop: "... Chrome/120.0.0.0 ...". Samsung TVs omit "Chrome/":
+      "... Tizen 9.0) AppleWebKit/537.36 (KHTML, like Gecko) 120.0.6099.5/9.0 TV Safari/537.36" */
+   (function () {
+      var ua = navigator.userAgent;
+      var tizenVer = (/Tizen ([\d.]+)/.exec(ua) || [])[1];
+      var chromium = (/Chrome\/(\d+)/.exec(ua) || /\) (\d+)\.\d+\.\d+\.\d+\//.exec(ua) || [])[1];
+      $("subtitle").textContent = "Samsung Tizen TV · " +
+         (tizenVer ? "Tizen " + tizenVer : (hasTizen ? "Tizen" : "tarayıcı")) +
+         " · " + (chromium ? "Chromium " + chromium : ua);
+   })();
 
    buildHome();
    initPhoneLink();

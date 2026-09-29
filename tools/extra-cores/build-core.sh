@@ -23,7 +23,12 @@ API='^retro_(api_version|init|deinit|set_environment|set_video_refresh|set_audio
 
 build_core() {
    (cd "$CORE_DIR" && make clean >/dev/null 2>&1 || true)
+   # -fno-common: wasm objects have no common symbols, so -fcommon
+   # tentative definitions (e.g. mupen64plus' g_dev) end up undefined.
+   # Cores tend to hardcode -fcommon; DYNAFLAGS comes after it and is unused
+   # without a dynarec (overridable with CORE_NO_COMMON_VAR).
    (cd "$CORE_DIR" && emmake make platform=emscripten STATIC_LINKING=1 \
+      "${CORE_NO_COMMON_VAR:-DYNAFLAGS}=-fno-common" \
       AR="$HERE/ar-as-relocatable.sh" -j"$JOBS" "$@")
 }
 

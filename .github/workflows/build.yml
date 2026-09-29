@@ -1,0 +1,156 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LIBRETRO_WEB: https://web.libretro.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Version
+        id: ver
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch libretro cores
+        run: |
+          mkdir -p site/cores
+          while read -r core; do
+            [ -z "$core" ] && continue
+            if ! curl -fsSL -o "site/cores/${core}_libretro.wasm" "$LIBRETRO_WEB/${core}_libretro.wasm" ||
+               ! curl -fsSL -o "/tmp/${core}.js" "$LIBRETRO_WEB/${core}_libretro.js"; then
+              echo "::warning::core $core not available, skipped"
+              rm -f "site/cores/${core}_libretro.wasm"
+              continue
+            fi
+            # The upstream cores are ES modules; turn them into classic
+            # scripts so they load from file:// inside the .wgt as well.
+            sed -e 's/import\.meta\.url/window.__RA_SCRIPT_URL/g' \
+                -e 's/^export default \(libretro_[A-Za-z0-9_]*\);$/window.\1=\1;/' \
+                "/tmp/${core}.js" > "site/cores/${core}_libretro.js"
+            if grep -qE '^export |import\.meta' "site/cores/${core}_libretro.js"; then
+              echo "::error::could not convert $core to a classic script"; exit 1
+            fi
+          done < tools/cores.txt
+          ls -la site/cores
+
+      - name: Build slim frontend bundle
+        run: |
+          mkdir -p /tmp/bundle site/assets/frontend
+          cd /tmp/bundle
+          for p in aa ab ac ad ae; do
+            curl -fsSL -o "bundle.zip.$p" "$LIBRETRO_WEB/assets/frontend/bundle.zip.$p"
+          done
+          cat bundle.zip.a? > full.zip
+          unzip -q full.zip \
+            'bundle/info/*' 'bundle/autoconfig/*' 'bundle/filters/*' \
+            'bundle/assets/rgui/*' 'bundle/assets/pkg/osd-font.ttf' 'bundle/assets/pkg/fallback-font.ttf' \
+            'bundle/shaders/*' -x 'bundle/shaders/handheld/*' 'bundle/shaders/bezel/*' 'bundle/shaders/reshade/*'
+          zip -qr9 "$GITHUB_WORKSPACE/site/assets/frontend/bundle.zip" bundle
+          ls -la "$GITHUB_WORKSPACE/site/assets/frontend"
+
+      - name: Assemble site
+        run: |
+          cp -r app/. site/
+          cp LICENSE site/ 2>/dev/null || true
+          touch site/.nojekyll
+
+      - name: Smoke test (headless Chromium)
+        run: |
+          node --check app/app.js
+          npm install --no-save --prefix /tmp/pw playwright@1
+          /tmp/pw/node_modules/.bin/playwright install --with-deps chromium
+          (cd site && python3 -m http.server 8000 >/dev/null 2>&1 &)
+          sleep 1
+          cp tools/smoke-test.mjs /tmp/pw/smoke-test.mjs
+          node /tmp/pw/smoke-test.mjs http://localhost:8000/
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: shot-*.png
+
+      - name: Build .wgt
+        env:
+          TIZEN_AUTHOR_P12: ${{ secrets.TIZEN_AUTHOR_P12 }}
+          TIZEN_AUTHOR_PASSWORD: ${{ secrets.TIZEN_AUTHOR_PASSWORD }}
+        run: |
+          npm install --no-save --prefix /tmp/tizenjs github:reisxd/tizen.js
+          TIZENJS=/tmp/tizenjs/node_modules/tizen/cli.js
+
+          if [ -n "$TIZEN_AUTHOR_P12" ]; then
+            echo "$TIZEN_AUTHOR_P12" | base64 -d > /tmp/author.p12
+            PASS="$TIZEN_AUTHOR_PASSWORD"
+          else
+            echo "::warning::TIZEN_AUTHOR_P12 secret not set, signing with a throwaway certificate"
+            PASS=throwaway
+            node "$TIZENJS" create-tizen-cert --name retroarch-tizen --password "$PASS" --output /tmp/author.p12
+          fi
+
+          python3 -m pip install --quiet pillow
+          mkdir -p wgt
+          cp -r app/. wgt/
+          sed "s/@VERSION@/${{ steps.ver.outputs.version }}/" tizen/config.xml > wgt/config.xml
+          python3 - <<'EOF'
+          from PIL import Image
+          src = Image.open("app/media/canvas.png").convert("RGBA")
+          src.thumbnail((512, 423))
+          icon = Image.new("RGBA", (512, 423), (16, 18, 24, 255))
+          icon.alpha_composite(src, ((512 - src.width) // 2, (423 - src.height) // 2))
+          icon.save("wgt/icon.png")
+          EOF
+
+          cd wgt
+          node "$TIZENJS" build . -t wgt -o ../RetroArch.wgt --author /tmp/author.p12 --authorPwd "$PASS" -p public
+          cd ..
+          unzip -l RetroArch.wgt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroArch-wgt
+          path: RetroArch.wgt
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" RetroArch.wgt \
+            --title "RetroArch for Tizen ${GITHUB_REF_NAME}" \
+            --notes-file tools/release-notes.md
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

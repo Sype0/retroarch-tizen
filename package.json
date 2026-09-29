@@ -1,0 +1,29 @@
+{
+  "name": "retroarch-tizen",
+  "appName": "RetroArch",
+  "version": "0.1.0",
+  "description": "RetroArch (libretro web player) for Samsung Tizen TVs: remote control support, ROMs from USB or a network folder.",
+  "packageType": "app",
+  "appPath": "app/index.html",
+  "keys": [
+    "ColorF0Red",
+    "ColorF1Green",
+    "ColorF2Yellow",
+    "ColorF3Blue",
+    "MediaPlayPause",
+    "MediaPlay",
+    "MediaPause",
+    "ChannelUp",
+    "ChannelDown",
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "author": "Sype0",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sype0/retroarch-tizen.git"
+  }
+}

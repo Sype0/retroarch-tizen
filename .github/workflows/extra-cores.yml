@@ -6,7 +6,7 @@ name: Extra cores
 on:
   workflow_dispatch:
   push:
-    paths: [".github/workflows/extra-cores.yml"]
+    paths: [".github/workflows/extra-cores.yml", "tools/extra-cores/**"]
 
 permissions:
   contents: write

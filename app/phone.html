@@ -109,6 +109,10 @@
          return null;
       }
 
+      function fmtSize(n) {
+         return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+      }
+
       /* The file RetroArch should open when a game is several files. */
       var MAIN_EXT = ["m3u", "cue", "ccd", "toc", "gdi"];
       function mainFile(list) {
@@ -123,7 +127,7 @@
          files = [].slice.call(fileInput.files);
          var total = files.reduce(function (n, f) { return n + f.size; }, 0);
          pick.textContent = !files.length ? "Dosya seçmek için dokun"
-            : files.map(function (f) { return f.name; }).join(", ") + " (" + (total / 1048576).toFixed(1) + " MB)";
+            : files.map(function (f) { return f.name; }).join(", ") + " (" + fmtSize(total) + ")";
          pick.classList.toggle("has-file", files.length > 0);
          sendBtn.disabled = !files.length;
          if (files.length) {

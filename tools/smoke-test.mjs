@@ -88,7 +88,7 @@ await scenario("rom", siteUrl, async (page, shot) => {
 
 if (tbUrl) await scenario("remote-assets", tbUrl, bootMenu);
 
-await scenario("n64", siteUrl, async (page, shot) => {
+await scenario("n64", siteUrl + "?fps=1", async (page, shot) => {
    await page.click('.tile:has-text("Nintendo 64")');
    await page.waitForSelector("#screen-source.active");
    await page.keyboard.press("Enter"); // network folder
@@ -98,9 +98,9 @@ await scenario("n64", siteUrl, async (page, shot) => {
    await page.waitForSelector("#screen-browser.active .item.focused");
    await page.keyboard.press("Enter");
    await page.waitForSelector("body.playing", { timeout: 180000 });
-   await page.waitForTimeout(10000);
+   await page.waitForTimeout(15000);
    await shot("1-game");
-   await page.waitForTimeout(10000);
+   await page.waitForTimeout(30000);
    await shot("2-game-later");
    await remoteKey(page, 403); // red key -> RetroArch menu
    await page.waitForTimeout(2000);

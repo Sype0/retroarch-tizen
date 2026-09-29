@@ -497,7 +497,13 @@
          playing = true;
          document.body.classList.add("playing");
          canvas.focus();
-         mod.callMain(["-v", content, "-c", CFG_PATH]);
+         var args = ["-v", content, "-c", CFG_PATH];
+         /* ?fps=1: show RetroArch's frame counter (for testing speed) */
+         if (/[?&]fps=1/.test(location.search)) {
+            FS.writeFile("/tmp/fps.cfg", 'fps_show = "true"\nframecount_show = "true"\n');
+            args.push("--appendconfig", "/tmp/fps.cfg");
+         }
+         mod.callMain(args);
       }).catch(function (err) {
          playing = false;
          document.body.classList.remove("playing");

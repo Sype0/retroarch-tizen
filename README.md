@@ -1,113 +1,121 @@
 # RetroArch for Tizen
 
-Samsung Tizen Smart TV'ler için RetroArch. [libretro web player](https://web.libretro.com/)
-(RetroArch'ın WebAssembly derlemesi) üzerine TV'ye özel bir katman ekler:
+**English** · [Türkçe](README.tr.md)
 
-- Kumanda ile gezilen başlatıcı (sistem seç → ROM seç → oyna)
-- Kumanda tuşlarının RetroArch tuşlarına çevrilmesi, USB/Bluetooth oyun kolu desteği
-- **Telefondan QR ile oyun gönderme** (TizenBrew): TV'deki QR'ı okut, ROM'u seç, oyun TV'de açılır
-- ROM'ları **USB bellekten** (yalnızca .wgt) veya **ağ klasöründen** (HTTP) yükleme
-- Hafif RGUI menüsü ve TV için ayarlanmış varsayılanlar
-- Kayıtlar/ayarlar TV'de kalıcı (IndexedDB)
+RetroArch for Samsung Tizen smart TVs. It adds a TV-specific layer on top of the
+[libretro web player](https://web.libretro.com/) (RetroArch compiled to WebAssembly):
 
-## Kurulum
+- Launcher you drive with the TV remote (pick a system → pick a ROM → play)
+- Remote keys mapped to RetroArch controls, USB/Bluetooth gamepad support
+- **Send games from your phone via QR code** (TizenBrew): scan the QR code on the TV, pick a ROM, it starts on the TV
+- Load ROMs from a **USB drive** (.wgt only) or a **network folder** (HTTP)
+- Lightweight RGUI menu and defaults tuned for TVs
+- Saves and settings persist on the TV (IndexedDB)
 
-### A) TizenBrew modülü (en kolay)
+> The on-TV interface is currently in Turkish. The menu entries are given below with their English meaning.
 
-TizenBrew açıkken modül yöneticisine şunu ekle:
+## Installation
+
+### A) TizenBrew module (easiest)
+
+In TizenBrew's module manager, add:
 
 ```
 gh/Sype0/retroarch-tizen
 ```
 
-### B) .wgt uygulaması (USB desteği için)
+### B) .wgt app (needed for USB support)
 
-TizenBrew Installer ile **GitHub reposundan kur** seçeneğine `Sype0/retroarch-tizen` yaz
-veya [Releases](https://github.com/Sype0/retroarch-tizen/releases) sayfasındaki `RetroArch.wgt`
-dosyasını USB'den kur. Tizen 7+ TV'lerde installer paketi kendi sertifikanla yeniden imzalar.
+In TizenBrew Installer, choose **install from a GitHub repository** and enter `Sype0/retroarch-tizen`,
+or install `RetroArch.wgt` from the [Releases](https://github.com/Sype0/retroarch-tizen/releases) page
+from a USB drive. On Tizen 7+ TVs the installer re-signs the package with your own certificate.
 
-Uygulama kabuğu TV'de çalışır; emülatör çekirdekleri (wasm) ilk açılışta
-<https://sype0.github.io/retroarch-tizen/> adresinden indirilir, bu yüzden internet gerekir.
+The app shell runs on the TV; the emulator cores (wasm) are downloaded from
+<https://sype0.github.io/retroarch-tizen/> when you start them, so the TV needs internet access.
 
-## ROM yükleme
+## Loading ROMs
 
-**Telefondan (QR, en kolayı):** TizenBrew modülü olarak açınca ana ekranın sağ üstünde bir QR kod çıkar.
-Telefonla okut → açılan sayfada ROM'u seç (CD oyunlarında .cue + .bin birlikte) → *TV'de oyna*.
-Sistem dosya uzantısından otomatik seçilir. Oyun oynarken yeni oyun gönderirsen TV ona geçer.
-ROM internete çıkmaz, telefon ile TV arasında yerel ağda gider (TV'de çalışan küçük servis:
-[`tizenbrew/service.js`](tizenbrew/service.js), port 8085). Telefon ve TV aynı Wi-Fi'da olmalı.
-.wgt sürümünde TV sunucu açamadığı için bu özellik yok.
+**From your phone (QR, easiest):** when running as a TizenBrew module, a QR code appears in the top
+right of the home screen. Scan it with your phone → pick the ROM on the page that opens (select the
+.cue and .bin together for CD games) → *TV'de oyna* (Play on TV). The system is picked from the file
+extension. Sending a new game while one is running switches the TV to it.
+The ROM never leaves your network: it goes straight from the phone to a small service running on the
+TV ([`tizenbrew/service.js`](tizenbrew/service.js), port 8085). Phone and TV must be on the same Wi-Fi.
+Not available in the .wgt version, because a .wgt app cannot run a server on the TV.
 
-**Ağ klasörü:** ROM'ların olduğu bilgisayarda veya telefonda (Termux dahil):
+**Network folder:** on the computer or phone that has your ROMs (Termux works too):
 
 ```sh
-python3 tools/rom-server.py /ROM/klasörü
+python3 tools/rom-server.py /path/to/roms
 ```
 
-Ekrana yazan adresi (ör. `http://192.168.1.20:8000/`) TV'de *Ağ klasöründen ROM seç* ekranına gir.
-Adres hatırlanır.
+Enter the address it prints (e.g. `http://192.168.1.20:8000/`) on the TV under
+*Ağ klasöründen ROM seç* (Load ROM from network folder). The address is remembered.
 
-**USB:** ROM'ları USB belleğe kopyala, TV'ye tak, *USB bellekten ROM seç*.
+**USB:** copy the ROMs to a USB drive, plug it into the TV, choose *USB bellekten ROM seç* (Load ROM from USB drive).
 
-## Kumanda tuşları (oyun içinde)
+## Remote control (in game)
 
-| Tuş | İşlev |
+| Key | Action |
 | --- | --- |
-| Yön tuşları | D-Pad |
-| OK | A (menüde onay) |
-| Geri | B (menüde geri) |
-| Kırmızı / 0 | RetroArch menüsü |
-| Yeşil / Sarı | Start / Select |
-| Mavi / 2 | X / Y |
+| Arrow keys | D-Pad |
+| OK | A (confirm in menus) |
+| Back | B (back in menus) |
+| Red / 0 | RetroArch menu |
+| Green / Yellow | Start / Select |
+| Blue / 2 | X / Y |
 | 1 / 3 | L / R |
-| CH+ / CH− | Durum kaydet / yükle |
-| Oynat/Duraklat | Duraklat |
+| CH+ / CH− | Save / load state |
+| Play/Pause | Pause |
 
-Oyundan çıkmak için menüden **Quit RetroArch** seç.
+To leave a game, choose **Quit RetroArch** in the menu.
 
-## Sistemler
+## Systems
 
 NES, SNES, Game Boy / Color / Advance, Sega Master System / Game Gear / Mega Drive / CD / 32X,
 PlayStation, PC Engine, Arcade (FBA 2012 CPS-1/2/Neo Geo, MAME 2003-Plus, FinalBurn Neo),
-Atari 2600 / Lynx, Neo Geo Pocket, WonderSwan, Virtual Boy, Doom. Liste: [`tools/cores.txt`](tools/cores.txt).
+Atari 2600 / Lynx, Neo Geo Pocket, WonderSwan, Virtual Boy, Doom. Full list: [`tools/cores.txt`](tools/cores.txt).
 
-**Nintendo 64 (deneysel):** libretro web için N64 derlemiyor; Mupen64Plus-Next'i bu repoda kaynaktan
-derliyoruz ([`extra-cores.yml`](.github/workflows/extra-cores.yml)). WebAssembly'de dynarec olmadığı
-için emülatör yorumlayıcı modda çalışır; TV işlemcisinde çoğu 3D oyun (Ocarina of Time dahil) tam
-hızın altında kalır. Hızı görmek için RetroArch menüsü → *Settings → On-Screen Display → Notification
-→ Display Framerate*.
+**Nintendo 64 (experimental):** libretro doesn't build N64 for the web, so this repo builds
+Mupen64Plus-Next from source ([`extra-cores.yml`](.github/workflows/extra-cores.yml)). WebAssembly has
+no dynarec, so the emulator runs as an interpreter; on a TV CPU most 3D games (Ocarina of Time
+included) run below full speed. To see the frame rate: RetroArch menu → *Settings → On-Screen Display →
+Notification → Display Framerate*.
 
-## Uyumluluk
+## Compatibility
 
-Libretro'nun web derlemesi Chromium 85+ gerektirir: **Tizen 6.5 ve üzeri (2022 ve sonrası modeller)**.
-Daha eski TV'lerde başlatıcı açılır ama çekirdekler hata verir (hata ekranın altında gösterilir).
-PlayStation ve büyük arcade oyunları TV'nin işlemcisine göre yavaş olabilir; ROM'lar belleğe
-yüklendiği için çok büyük CD imajları (yüzlerce MB) sorun çıkarabilir.
+The libretro web build needs Chromium 85+: **Tizen 6.5 or newer (2022 and later models)**.
+On older TVs the launcher opens but the cores fail (the error is shown at the bottom of the screen).
+PlayStation and large arcade games may be slow depending on the TV's CPU. ROMs are loaded into memory,
+so very large CD images (hundreds of MB) can cause problems.
 
-## Nasıl çalışır / derleme
+## How it works / building
 
 `.github/workflows/build.yml`:
 
-1. `tools/cores.txt` içindeki çekirdekleri web.libretro.com'dan indirir, ES modüllerini klasik
-   script'e çevirir (wgt içinde `file://` altında da yüklenebilsin diye).
-2. RetroArch'ın 133 MB'lık asset paketini gerekli kısımlarına (core info, autoconfig, RGUI, shader) indirger.
-3. `extra-cores` ön sürümündeki kaynaktan derlenmiş çekirdekleri (N64) ekler.
-4. `app/` + çekirdekler + paketi GitHub Pages'e yayınlar.
-5. [tizen.js](https://github.com/reisxd/tizen.js) ile imzalı `RetroArch.wgt` üretir; `v*` etiketinde Release oluşturur.
+1. Downloads the cores listed in `tools/cores.txt` from web.libretro.com and turns their ES modules
+   into classic scripts (so they also load from `file://` inside the .wgt).
+2. Trims RetroArch's 133 MB asset bundle down to what is needed (core info, autoconfig, RGUI, shaders).
+3. Adds the cores built from source in the `extra-cores` prerelease (N64).
+4. Publishes `app/` + cores + bundle to GitHub Pages.
+5. Builds a signed `RetroArch.wgt` with [tizen.js](https://github.com/reisxd/tizen.js); a `v*` tag creates a Release.
+6. Runs headless Chromium smoke tests ([`tools/smoke-test.mjs`](tools/smoke-test.mjs)): booting a core,
+   loading a ROM from a network folder, TizenBrew-style cross-origin assets, N64, and phone → TV transfer.
 
-`extra-cores.yml`, libretro buildbot'un web için derlemediği çekirdekleri RetroArch master ile birlikte
-Emscripten'le derler ([`tools/extra-cores/build-core.sh`](tools/extra-cores/build-core.sh)): çekirdeğin
-libretro-common kopyasındaki RetroArch ile çakışan semboller otomatik yeniden adlandırılır, libco için
-Emscripten fiber arka ucu eklenir ([`libco_emscripten_fiber.c`](tools/extra-cores/libco_emscripten_fiber.c),
-Asyncify ile bağlanır).
+`extra-cores.yml` builds cores that the libretro buildbot doesn't ship for the web, together with
+RetroArch master, using Emscripten ([`tools/extra-cores/build-core.sh`](tools/extra-cores/build-core.sh)):
+symbols in the core's copy of libretro-common that clash with RetroArch are renamed automatically, and
+libco gets an Emscripten fiber backend ([`libco_emscripten_fiber.c`](tools/extra-cores/libco_emscripten_fiber.c),
+linked with Asyncify).
 
-İmzalama için repo secret'ları: `TIZEN_AUTHOR_P12` (base64 PKCS#12) ve `TIZEN_AUTHOR_PASSWORD`.
+Signing uses the repo secrets `TIZEN_AUTHOR_P12` (base64 PKCS#12) and `TIZEN_AUTHOR_PASSWORD`; without
+them each build signs with a throwaway certificate.
 
-Yerelde denemek için `app/` klasörünü herhangi bir web sunucusuyla aç; `?base=https://sype0.github.io/retroarch-tizen/`
-parametresi çekirdekleri Pages'ten çeker.
+To try it locally, serve the `app/` folder with any web server; the `?base=https://sype0.github.io/retroarch-tizen/`
+parameter loads the cores from GitHub Pages, and `?fps=1` shows RetroArch's frame counter.
 
-## Lisans
+## License
 
-GPLv3. RetroArch ve libretro çekirdekleri kendi lisanslarına tabidir
+GPLv3. RetroArch and the libretro cores are under their own licenses
 ([RetroArch](https://github.com/libretro/RetroArch), [libretro](https://www.libretro.com/)).
-Bu proje libretro ekibiyle bağlantılı değildir. ROM dahil değildir; yalnızca sahip olduğun oyunları kullan.
+This project is not affiliated with the libretro team. No ROMs are included; only use games you own.

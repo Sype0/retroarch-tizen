@@ -12,8 +12,6 @@ RetroArch for Samsung Tizen smart TVs. It adds a TV-specific layer on top of the
 - Lightweight RGUI menu and defaults tuned for TVs
 - Saves and settings persist on the TV (IndexedDB)
 
-> The on-TV interface is currently in Turkish. The menu entries are given below with their English meaning.
-
 ## Installation
 
 ### A) TizenBrew module (easiest)
@@ -37,7 +35,7 @@ The app shell runs on the TV; the emulator cores (wasm) are downloaded from
 
 **From your phone (QR, easiest):** when running as a TizenBrew module, a QR code appears in the top
 right of the home screen. Scan it with your phone → pick the ROM on the page that opens (select the
-.cue and .bin together for CD games) → *TV'de oyna* (Play on TV). The system is picked from the file
+.cue and .bin together for CD games) → *Play on TV*. The system is picked from the file
 extension. Sending a new game while one is running switches the TV to it.
 The ROM never leaves your network: it goes straight from the phone to a small service running on the
 TV ([`tizenbrew/service.js`](tizenbrew/service.js), port 8085). Phone and TV must be on the same Wi-Fi.
@@ -50,9 +48,9 @@ python3 tools/rom-server.py /path/to/roms
 ```
 
 Enter the address it prints (e.g. `http://192.168.1.20:8000/`) on the TV under
-*Ağ klasöründen ROM seç* (Load ROM from network folder). The address is remembered.
+*Load ROM from network folder*. The address is remembered.
 
-**USB:** copy the ROMs to a USB drive, plug it into the TV, choose *USB bellekten ROM seç* (Load ROM from USB drive).
+**USB:** copy the ROMs to a USB drive, plug it into the TV, choose *Load ROM from USB drive*.
 
 ## Remote control (in game)
 

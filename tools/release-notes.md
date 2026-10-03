@@ -1,7 +1,7 @@
-**Kurulum**
+**Install**
 
-- TizenBrew modülü: `gh/Sype0/retroarch-tizen`
-- WGT: TizenBrew Installer → GitHub'dan kur → `Sype0/retroarch-tizen`, ya da aşağıdaki `RetroArch.wgt`
+- TizenBrew module: `gh/Sype0/retroarch-tizen`
+- WGT: TizenBrew Installer → install from GitHub → `Sype0/retroarch-tizen`, or `RetroArch.wgt` below
 
-Çekirdekler ilk açılışta https://sype0.github.io/retroarch-tizen/ adresinden indirilir.
-Tizen 6.5+ (2022 ve sonrası) TV gerektirir. Ayrıntılar README'de.
+Cores are downloaded from https://sype0.github.io/retroarch-tizen/ on first start.
+Requires a TV with Tizen 6.5+ (2022 or newer). Details in the README.

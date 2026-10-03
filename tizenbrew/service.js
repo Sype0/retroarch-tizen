@@ -78,7 +78,7 @@ function servePhoneFile(res, file) {
    getRemote(FILES_BASE + file, function (err, data) {
       if (err) {
          if (cached) send(res, 200, cached.data, TYPES[file.split(".").pop()]);
-         else send(res, 502, "TV internete bağlanamadı: " + err.message, "text/plain; charset=utf-8");
+         else send(res, 502, "The TV could not reach the internet: " + err.message, "text/plain; charset=utf-8");
          return;
       }
       fileCache[file] = { data: data, at: Date.now() };
@@ -99,7 +99,7 @@ function handleUpload(req, res, query) {
          aborted = true;
          chunks = [];
          delete batches[batchId];
-         send(res, 413, JSON.stringify({ error: "Dosya çok büyük (en fazla 512 MB)" }));
+         send(res, 413, JSON.stringify({ error: "File too large (512 MB at most)" }));
          req.destroy();
          return;
       }

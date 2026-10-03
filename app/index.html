@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=1920, initial-scale=1">
@@ -17,10 +17,10 @@
          }
          window.raShowError = show;
          window.addEventListener("error", function (e) {
-            show("Hata: " + (e.message || e) + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : ""));
+            show("Error: " + (e.message || e) + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : ""));
          });
          window.addEventListener("unhandledrejection", function (e) {
-            show("Hata: " + (e.reason && (e.reason.stack || e.reason.message) || e.reason));
+            show("Error: " + (e.reason && (e.reason.stack || e.reason.message) || e.reason));
          });
       })();
    </script>
@@ -35,8 +35,8 @@
          </div>
          <div id="phone-panel">
             <div>
-               <div class="phone-title">📱 Telefondan oyun gönder</div>
-               <div class="muted">QR'ı telefonunla okut, ROM'u seç.<br>Aynı Wi-Fi ağında olmalısın.</div>
+               <div class="phone-title">📱 Send a game from your phone</div>
+               <div class="muted">Scan the QR code with your phone and pick a ROM.<br>Both must be on the same Wi-Fi network.</div>
                <div class="muted path" id="phone-url"></div>
             </div>
             <div id="qr"></div>
@@ -44,11 +44,11 @@
       </header>
 
       <section id="screen-home" class="screen">
-         <h2>Sistem seç</h2>
+         <h2>Choose a system</h2>
          <div id="core-grid" class="grid"></div>
          <div class="row">
-            <button class="btn small" id="btn-help">Kumanda tuşları</button>
-            <button class="btn small" id="btn-reset">Ayarları sıfırla</button>
+            <button class="btn small" id="btn-help">Remote keys</button>
+            <button class="btn small" id="btn-reset">Reset settings</button>
          </div>
       </section>
 
@@ -64,30 +64,30 @@
       </section>
 
       <section id="screen-url" class="screen">
-         <h2>Ağ klasörü</h2>
-         <p class="muted">ROM'larının bulunduğu bilgisayarda/telefonda <code>tools/rom-server.py</code> çalıştır ve gösterdiği adresi gir. Örnek: <code>http://192.168.1.20:8000/</code></p>
+         <h2>Network folder</h2>
+         <p class="muted">Run <code>tools/rom-server.py</code> on the computer or phone that has your ROMs and enter the address it prints. Example: <code>http://192.168.1.20:8000/</code></p>
          <input type="text" id="url-input" class="focusable" spellcheck="false" autocomplete="off">
          <div class="row">
-            <button class="btn" id="btn-url-ok">Bağlan</button>
+            <button class="btn" id="btn-url-ok">Connect</button>
          </div>
       </section>
 
       <section id="screen-help" class="screen">
-         <h2>Kumanda tuşları (oyun içinde)</h2>
+         <h2>Remote keys (in game)</h2>
          <table class="keys">
-            <tr><td>Yön tuşları</td><td>D-Pad</td></tr>
-            <tr><td>OK</td><td>A (menüde onay)</td></tr>
-            <tr><td>Geri</td><td>B (menüde geri)</td></tr>
-            <tr><td>Kırmızı / 0</td><td>RetroArch menüsü</td></tr>
-            <tr><td>Yeşil</td><td>Start</td></tr>
-            <tr><td>Sarı</td><td>Select</td></tr>
-            <tr><td>Mavi</td><td>X</td></tr>
+            <tr><td>Arrow keys</td><td>D-Pad</td></tr>
+            <tr><td>OK</td><td>A (confirm in menus)</td></tr>
+            <tr><td>Back</td><td>B (back in menus)</td></tr>
+            <tr><td>Red / 0</td><td>RetroArch menu</td></tr>
+            <tr><td>Green</td><td>Start</td></tr>
+            <tr><td>Yellow</td><td>Select</td></tr>
+            <tr><td>Blue</td><td>X</td></tr>
             <tr><td>2</td><td>Y</td></tr>
             <tr><td>1 / 3</td><td>L / R</td></tr>
-            <tr><td>CH + / CH −</td><td>Durum kaydet / yükle</td></tr>
-            <tr><td>Oynat/Duraklat</td><td>Duraklat</td></tr>
+            <tr><td>CH + / CH −</td><td>Save / load state</td></tr>
+            <tr><td>Play/Pause</td><td>Pause</td></tr>
          </table>
-         <p class="muted">USB/Bluetooth oyun kolları otomatik tanınır. Çıkmak için menüden <b>Quit RetroArch</b> seç.</p>
+         <p class="muted">USB/Bluetooth gamepads are detected automatically. To leave, choose <b>Quit RetroArch</b> in the menu.</p>
       </section>
    </div>
 
@@ -95,7 +95,7 @@
 
    <div id="loading">
       <div class="spinner"></div>
-      <div id="loading-text">Yükleniyor…</div>
+      <div id="loading-text">Loading…</div>
       <div class="bar"><div id="loading-bar"></div></div>
    </div>
 

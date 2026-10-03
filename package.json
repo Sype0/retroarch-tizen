@@ -1,7 +1,7 @@
 {
   "name": "retroarch-tizen",
   "appName": "RetroArch",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "RetroArch (libretro web player) for Samsung Tizen TVs: remote control support, send games from your phone via QR code, ROMs from USB or a network folder.",
   "packageType": "app",
   "appPath": "app/index.html",

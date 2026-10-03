@@ -35,8 +35,8 @@ def main():
     port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
     os.chdir(folder)
     server = http.server.ThreadingHTTPServer(("0.0.0.0", port), Handler)
-    print(f"ROM klasörü: {os.getcwd()}")
-    print(f"TV'de şu adresi gir: http://{local_ip()}:{port}/")
+    print(f"ROM folder: {os.getcwd()}")
+    print(f"Enter this address on the TV: http://{local_ip()}:{port}/")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

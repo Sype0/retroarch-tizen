@@ -34,7 +34,7 @@ Uygulama kabuğu TV'de çalışır; emülatör çekirdekleri (wasm) ilk açılı
 ## ROM yükleme
 
 **Telefondan (QR, en kolayı):** TizenBrew modülü olarak açınca ana ekranın sağ üstünde bir QR kod çıkar.
-Telefonla okut → açılan sayfada ROM'u seç (CD oyunlarında .cue + .bin birlikte) → *TV'de oyna*.
+Telefonla okut → açılan sayfada ROM'u seç (CD oyunlarında .cue + .bin birlikte) → *Play on TV*.
 Sistem dosya uzantısından otomatik seçilir. Oyun oynarken yeni oyun gönderirsen TV ona geçer.
 ROM internete çıkmaz, telefon ile TV arasında yerel ağda gider (TV'de çalışan küçük servis:
 [`tizenbrew/service.js`](tizenbrew/service.js), port 8085). Telefon ve TV aynı Wi-Fi'da olmalı.
@@ -46,10 +46,10 @@ ROM internete çıkmaz, telefon ile TV arasında yerel ağda gider (TV'de çalı
 python3 tools/rom-server.py /ROM/klasörü
 ```
 
-Ekrana yazan adresi (ör. `http://192.168.1.20:8000/`) TV'de *Ağ klasöründen ROM seç* ekranına gir.
+Ekrana yazan adresi (ör. `http://192.168.1.20:8000/`) TV'de *Load ROM from network folder* ekranına gir.
 Adres hatırlanır.
 
-**USB:** ROM'ları USB belleğe kopyala, TV'ye tak, *USB bellekten ROM seç*.
+**USB:** ROM'ları USB belleğe kopyala, TV'ye tak, *Load ROM from USB drive*.
 
 ## Kumanda tuşları (oyun içinde)
 

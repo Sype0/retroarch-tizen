@@ -319,7 +319,7 @@
                resolve(xhr.response);
             else reject(new Error("HTTP " + xhr.status + " " + url));
          };
-         xhr.onerror = function () { reject(new Error("Ağ hatası: " + url)); };
+         xhr.onerror = function () { reject(new Error("Network error: " + url)); };
          xhr.send();
       });
    }
@@ -332,7 +332,7 @@
             if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
             else reject(new Error("HTTP " + xhr.status));
          };
-         xhr.onerror = function () { reject(new Error("Bağlanılamadı")); };
+         xhr.onerror = function () { reject(new Error("Could not connect")); };
          xhr.send();
       });
    }
@@ -342,7 +342,7 @@
          var s = document.createElement("script");
          s.src = url;
          s.onload = resolve;
-         s.onerror = function () { reject(new Error("Script yüklenemedi: " + url)); };
+         s.onerror = function () { reject(new Error("Could not load script: " + url)); };
          document.body.appendChild(s);
       });
    }
@@ -372,7 +372,7 @@
    }
 
    function initBundleFS() {
-      return download(ASSET_BASE + "assets/frontend/bundle.zip", "RetroArch dosyaları indiriliyor").then(function (buf) {
+      return download(ASSET_BASE + "assets/frontend/bundle.zip", "Downloading RetroArch files").then(function (buf) {
          return new Promise(function (resolve, reject) {
             var Buffer = BrowserFS.BFSRequire("buffer").Buffer;
             var u8 = new Uint8Array(buf);
@@ -441,17 +441,17 @@
    }
 
    function startCore(core) {
-      loading("RetroArch hazırlanıyor…", null);
+      loading("Preparing RetroArch…", null);
       var factoryName = "libretro_" + core.id;
 
       initFS().then(function () {
-         return download(ASSET_BASE + "cores/" + core.id + "_libretro.wasm", core.emu + " indiriliyor");
+         return download(ASSET_BASE + "cores/" + core.id + "_libretro.wasm", "Downloading " + core.emu);
       }).then(function (wasm) {
-         loading("Başlatılıyor…", 1);
+         loading("Starting…", 1);
          window.__RA_SCRIPT_URL = ASSET_BASE + "cores/" + core.id + "_libretro.js";
          var p = window[factoryName] ? Promise.resolve() : loadScript(window.__RA_SCRIPT_URL);
          return p.then(function () {
-            if (!window[factoryName]) throw new Error(factoryName + " bulunamadı");
+            if (!window[factoryName]) throw new Error(factoryName + " not found");
             return window[factoryName]({
                noInitialRun: true,
                canvas: canvas,
@@ -507,7 +507,7 @@
       }).catch(function (err) {
          playing = false;
          document.body.classList.remove("playing");
-         fail(core.emu + " başlatılamadı", err);
+         fail("Could not start " + core.emu, err);
       });
    }
 
@@ -532,8 +532,8 @@
       try { localStorage.removeItem("ra_net_url"); } catch (e) { /* ignore */ }
       if (!window.indexedDB) return;
       var req = indexedDB.deleteDatabase("RetroArch");
-      req.onsuccess = function () { alert("Ayarlar ve kayıtlar silindi."); };
-      req.onerror = function () { alert("Silinemedi."); };
+      req.onsuccess = function () { alert("Settings and saves deleted."); };
+      req.onerror = function () { alert("Could not delete."); };
    }
 
    function openSource(core) {
@@ -548,14 +548,14 @@
          list.appendChild(b);
       }
 
-      if (usbAvailable()) add("USB bellekten ROM seç", "", browseUsbRoot);
+      if (usbAvailable()) add("Load ROM from USB drive", "", browseUsbRoot);
       var net = savedNetUrl();
-      if (net) add("Ağ klasöründen ROM seç", net, function () { browseHttp(net); });
-      add(net ? "Ağ klasörü adresini değiştir" : "Ağ klasöründen ROM seç", "HTTP", function () {
+      if (net) add("Load ROM from network folder", net, function () { browseHttp(net); });
+      add(net ? "Change network folder address" : "Load ROM from network folder", "HTTP", function () {
          $("url-input").value = net || "http://";
          showScreen("screen-url");
       });
-      add("RetroArch menüsünü aç", "ROM olmadan", function () { startCore(core); });
+      add("Open RetroArch menu", "without a ROM", function () { startCore(core); });
       showScreen("screen-source");
    }
 
@@ -584,7 +584,7 @@
          b.onclick = en.open;
          list.appendChild(b);
       });
-      if (!shown) list.appendChild(el("div", "muted", "Bu klasörde " + esc(selectedCore.name) + " için dosya yok."));
+      if (!shown) list.appendChild(el("div", "muted", "No " + esc(selectedCore.name) + " files in this folder."));
       showScreen("screen-browser", push);
    }
 
@@ -602,12 +602,12 @@
    function browseUsbRoot() {
       tizen.filesystem.listStorages(function (storages) {
          var usb = storages.filter(function (s) { return s.type === "EXTERNAL" && s.state === "MOUNTED"; });
-         if (!usb.length) { fail("Takılı USB bellek bulunamadı"); return; }
+         if (!usb.length) { fail("No USB drive found"); return; }
          if (usb.length === 1) { browseUsb(usb[0].label, true); return; }
          showBrowser("USB", "", usb.map(function (s) {
             return { name: s.label, dir: true, open: function () { browseUsb(s.label, true); } };
          }), true);
-      }, function (e) { fail("USB listelenemedi", e); });
+      }, function (e) { fail("Could not list USB drives", e); });
    }
 
    function browseUsb(path, push) {
@@ -624,12 +624,12 @@
                };
             });
             showBrowser("USB", path, entries, push);
-         }, function (e) { fail("Klasör okunamadı", e); });
-      }, function (e) { fail("Klasör açılamadı: " + path, e); }, "r");
+         }, function (e) { fail("Could not read folder", e); });
+      }, function (e) { fail("Could not open folder: " + path, e); }, "r");
    }
 
    function readUsbFile(f) {
-      loading(f.name + " okunuyor…", null);
+      loading("Reading " + f.name + "…", null);
       setTimeout(function () {
          try {
             /* Tizen 5+ API: returns a Uint8Array directly. */
@@ -646,8 +646,8 @@
                var bytes = stream.readBytes(f.fileSize);
                stream.close();
                playRom(f.name, new Uint8Array(bytes));
-            } catch (e) { fail("Dosya okunamadı", e); }
-         }, function (e) { fail("Dosya açılamadı", e); });
+            } catch (e) { fail("Could not read file", e); }
+         }, function (e) { fail("Could not open file", e); });
       }, 50);
    }
 
@@ -666,7 +666,7 @@
    };
 
    function browseHttp(url, push) {
-      loading("Bağlanılıyor…", null);
+      loading("Connecting…", null);
       downloadText(url).then(function (html) {
          loading(null);
          var doc = new DOMParser().parseFromString(html, "text/html");
@@ -688,15 +688,15 @@
                open: dir
                   ? function () { browseHttp(abs); }
                   : function () {
-                     download(abs, name + " indiriliyor").then(function (buf) {
+                     download(abs, "Downloading " + name).then(function (buf) {
                         playRom(name, new Uint8Array(buf));
-                     }).catch(function (e) { fail("İndirilemedi", e); });
+                     }).catch(function (e) { fail("Download failed", e); });
                   }
             });
          });
-         showBrowser("Ağ klasörü", url, entries, push);
+         showBrowser("Network folder", url, entries, push);
       }).catch(function (e) {
-         fail("Ağ klasörüne bağlanılamadı (" + url + ")", e);
+         fail("Could not connect to network folder (" + url + ")", e);
       });
    }
 
@@ -720,12 +720,12 @@
    function receiveFromPhone(p) {
       var done = function () { return downloadText(SERVICE + "api/done/" + p.id); };
       var core = RA_CORES.filter(function (c) { return c.id === p.core; })[0];
-      if (!core) { fail("Bilinmeyen sistem: " + p.core); return done().catch(function () {}); }
+      if (!core) { fail("Unknown system: " + p.core); return done().catch(function () {}); }
       selectedCore = core;
       var files = [];
       return p.files.reduce(function (chain, f, i) {
          return chain.then(function () {
-            return download(SERVICE + "api/rom/" + p.id + "/" + i, "Telefondan alınıyor: " + f.name).then(function (buf) {
+            return download(SERVICE + "api/rom/" + p.id + "/" + i, "Receiving from phone: " + f.name).then(function (buf) {
                files.push({ name: f.name, data: new Uint8Array(buf) });
             });
          });
@@ -733,7 +733,7 @@
          pendingRom = { main: p.main, files: files };
          startCore(core);
       }).catch(function (e) {
-         fail("Telefondan alınamadı", e);
+         fail("Could not receive from phone", e);
          return done().catch(function () {}); /* don't retry the same upload forever */
       });
    }
@@ -778,7 +778,7 @@
       var tizenVer = (/Tizen ([\d.]+)/.exec(ua) || [])[1];
       var chromium = (/Chrome\/(\d+)/.exec(ua) || /\) (\d+)\.\d+\.\d+\.\d+\//.exec(ua) || [])[1];
       $("subtitle").textContent = "Samsung Tizen TV · " +
-         (tizenVer ? "Tizen " + tizenVer : (hasTizen ? "Tizen" : "tarayıcı")) +
+         (tizenVer ? "Tizen " + tizenVer : (hasTizen ? "Tizen" : "browser")) +
          " · " + (chromium ? "Chromium " + chromium : ua);
    })();
 

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-   <title>RetroArch — TV'ye oyun gönder</title>
+   <title>RetroArch — send a game to the TV</title>
    <style>
       :root { color-scheme: dark; }
       body {
@@ -57,18 +57,18 @@
 </head>
 <body>
    <main>
-      <h1>🎮 TV'ye oyun gönder</h1>
-      <p class="muted">ROM'u seç, TV'de RetroArch otomatik başlar. Telefon ve TV aynı Wi-Fi ağında olmalı.</p>
+      <h1>🎮 Send a game to the TV</h1>
+      <p class="muted">Pick a ROM and RetroArch starts on the TV. The phone and the TV must be on the same Wi-Fi network.</p>
 
-      <label for="file">Oyun dosyası</label>
-      <p class="muted" style="margin-top:-4px">CD oyunlarında .cue ve .bin dosyalarını birlikte seç.</p>
-      <div class="pick" id="pick">Dosya seçmek için dokun</div>
+      <label for="file">Game file</label>
+      <p class="muted" style="margin-top:-4px">For CD games, select the .cue and .bin files together.</p>
+      <div class="pick" id="pick">Tap to choose a file</div>
       <input type="file" id="file" multiple>
 
-      <label for="core">Sistem</label>
+      <label for="core">System</label>
       <select id="core"></select>
 
-      <button id="send" disabled>TV'de oyna</button>
+      <button id="send" disabled>Play on TV</button>
       <div class="bar" id="bar"><div id="bar-fill"></div></div>
       <div id="status"></div>
    </main>
@@ -126,7 +126,7 @@
       fileInput.onchange = function () {
          files = [].slice.call(fileInput.files);
          var total = files.reduce(function (n, f) { return n + f.size; }, 0);
-         pick.textContent = !files.length ? "Dosya seçmek için dokun"
+         pick.textContent = !files.length ? "Tap to choose a file"
             : files.map(function (f) { return f.name; }).join(", ") + " (" + fmtSize(total) + ")";
          pick.classList.toggle("has-file", files.length > 0);
          sendBtn.disabled = !files.length;
@@ -148,7 +148,7 @@
                try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
                reject(new Error(msg));
             };
-            xhr.onerror = function () { reject(new Error("TV'ye ulaşılamadı. Aynı Wi-Fi'da mısın?")); };
+            xhr.onerror = function () { reject(new Error("Could not reach the TV. Are you on the same Wi-Fi network?")); };
             xhr.send(file);
          });
       }
@@ -160,7 +160,7 @@
          var bar = document.getElementById("bar"), fill = document.getElementById("bar-fill");
          bar.style.display = "block";
          fill.style.width = "0";
-         status("Gönderiliyor…");
+         status("Sending…");
 
          var batch = Date.now() + "-" + Math.random().toString(36).slice(2);
          var main = mainFile(files);
@@ -180,9 +180,9 @@
             });
          }, Promise.resolve()).then(function () {
             fill.style.width = "100%";
-            status("Gönderildi! Oyun TV'de açılıyor.", "ok");
+            status("Sent! The game is starting on the TV.", "ok");
          }).catch(function (e) {
-            status("Hata: " + e.message, "err");
+            status("Error: " + e.message, "err");
          }).then(function () {
             sendBtn.disabled = false;
          });
